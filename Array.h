@@ -1,90 +1,95 @@
 //
 // Created by Jorko P on 09-May-19.
 //
-
 #ifndef NFA_ARRAY_H
 #define NFA_ARRAY_H
 
 template<typename T>
 class Array {
     T* arr;
-    int number_of_elements;
+    int numberOfElements;
     int capacity;
 
 public:
     Array() {
-        number_of_elements = 0;
+        numberOfElements = 0;
         capacity = 16;
         arr = new T[capacity];
     }
-
     Array(const Array& other) {
-        number_of_elements = other.number_of_elements;
+        numberOfElements = other.numberOfElements;
         capacity = other.capacity;
-
         arr = new T[capacity];
 
-        for (int i = 0; i < number_of_elements; i++) {
+        for (int i = 0; i < numberOfElements; i++) {
             arr[i] = other.arr[i];
         }
     }
-
     Array& operator=(const Array& other) {
         if(this != &other) {
             delete[] arr;
-
-            number_of_elements = other.number_of_elements;
+            numberOfElements = other.numberOfElements;
             capacity = other.capacity;
-
             arr = new T[capacity];
 
-            for (int i = 0; i < number_of_elements; i++) {
+            for (int i = 0; i < numberOfElements; i++) {
                 arr[i] = other.arr[i];
             }
         }
         return *this;
     }
-
     ~Array() {
         delete[] arr;
     }
 
-    void reduce_number_of_elements() {
-        number_of_elements--;
+    void reduceNumberOfElements() {
+        numberOfElements--;
     }
-
-    int get_number_of_elements() const {
-        return number_of_elements;
+    int getNumberOfElements() const {
+        return numberOfElements;
     }
+    void addElement(T element) {
+        if (numberOfElements == capacity) {
+            capacity *= 2;
+            T* helper = new T[capacity];
 
-    void resize() {
-        capacity *= 2;
-        T* helper = new T[capacity];
+            for(int i = 0; i < numberOfElements; i++) {
+                helper[i] = arr[i];
+            }
 
-        for(int i = 0; i < number_of_elements; i++) {
-            helper[i] = arr[i];
+            delete[] arr;
+            arr = helper;
         }
-
-        delete[] arr;
-        arr = helper;
+        arr[numberOfElements] = element;
+        numberOfElements++;
     }
-
-    void add_element(T element) {
-        if (number_of_elements == capacity) {
-            resize();
+    void removeElement(T element) {
+        if(numberOfElements > 0){
+            for(int i = 0 ; i < numberOfElements ; i++){
+                if(arr[i] == element){
+                    for(int j = i; j < numberOfElements - 1; j++){
+                        arr[j] = arr[j+1];
+                    }
+                    numberOfElements--;
+                    break;
+                }
+            }
         }
-        arr[number_of_elements] = element;
-        number_of_elements++;
     }
 
     T operator [] (int i) const {
         return arr[i];
     }
-
     T& operator [] (int i) {
         return arr[i];
     }
+    bool operator== (const Array& other) const {
+        if(numberOfElements != other.numberOfElements) return false;
+        for (int i = 0; i < numberOfElements; ++i) {
+            if(!(arr[i] == other.arr[i])) return false;
+        }
+        return true;
+    }
 };
-
 
 #endif //NFA_ARRAY_H

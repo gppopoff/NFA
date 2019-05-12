@@ -33,6 +33,8 @@ public:
     void removeTrans(Trans);
 
     void print() const;
+
+    bool operator==(const State&) const;
 };
 
 
