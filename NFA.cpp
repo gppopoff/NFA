@@ -10,14 +10,14 @@
 const int SYMBOLS_IN_LANGUAGE = 36;
 
 NFA::NFA() {
-    strcpy(id,"ID***\0");
+    strcpy_s(id,"ID***\0");
 }
 
 const char* NFA::getId() const {
     return id;
 }
 void NFA::setId(char * newId) {
-    strncpy(id,newId,5);
+    strncpy_s(id,newId,5);
     id[5] = '\0';
 }
 
@@ -56,7 +56,7 @@ bool NFA::recognize(const char * word,int length, int& symbolIndex) {
 }
 
 bool NFA::isAlreadyInStr(std::string str, int index) const {
-    for(int i=0; i < str.length(); i++){
+    for(unsigned int i=0; i < str.length(); i++){
         if(str[i] - '0' == index){
             return true;
         }
@@ -92,7 +92,7 @@ void NFA::epsilonclosure(std::string &new_state, int index) const {
 }
 
 void NFA::epsilonclosureString(std::string &new_state, std::string old_state) const {
-    for (int i = 0; i < old_state.length() ; i++) {
+    for (unsigned int i = 0; i < old_state.length() ; i++) {
         epsilonclosure(new_state,old_state[i] - '0');
     }
 
@@ -100,7 +100,7 @@ void NFA::epsilonclosureString(std::string &new_state, std::string old_state) co
 
 std::string NFA::whereItGoesWith(std::string state, char symbol) const {
     std::string next_state;
-    for(int i=0;i < state.length();i++){
+    for(unsigned int i=0;i < state.length();i++){
         for (int j = 0; j < states[state[i] - '0'].getTranss().getNumberOfElements(); j++) {
             if(states[state[i] - '0'].getTranss()[j].getSymbol() == symbol){
                 if(!isAlreadyInStr(next_state,states[state[i] - '0'].getTranss()[j].getPath())){
@@ -127,6 +127,8 @@ NFA NFA::detemine() const {
     State newInitial;
     newInitial.makeInitial();
     new_states.addElement(start);
+
+	/*
     for (int i = 0; i < SYMBOLS_IN_LANGUAGE ; i++) {
         std::string tempState;
         char symbol;
@@ -145,9 +147,9 @@ NFA NFA::detemine() const {
         }else{
             newInitial.addTrans(Trans(symbol,-1));
         }
-    }
-    new_one.addState(newInitial);
-    for (int i = 1; i < new_states.getNumberOfElements() ; i++) {
+    }*/
+   // new_one.addState(newInitial);
+    for (int i = 0; i < new_states.getNumberOfElements() ; i++) {
         State newState;
         for (int j = 0; j < SYMBOLS_IN_LANGUAGE ; j++) {
             std::string tempState;
@@ -171,13 +173,14 @@ NFA NFA::detemine() const {
                 newState.addTrans(Trans(symbol,-1));
             }
             for (int k = 0; k < finals.getNumberOfElements(); k++) {
-                for (int l = 0; l < tempState.length(); l++) {
+                for (unsigned int l = 0; l < tempState.length(); l++) {
                     if(finals[k] == tempState[l] - '0'){
                         newState.makeFinal();
                     }
                 }
             }
         }
+		if (i == 0) newState.makeInitial();
         new_one.addState(newState);
     }
     new_one.print();
