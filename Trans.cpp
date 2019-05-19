@@ -17,8 +17,5 @@ void Trans::print() const {
     std::cout<<symbol<< "->" << path << "  ";
 }
 bool Trans::operator==(const Trans & other) const {
-    if(symbol == other.getSymbol() && path == other.getPath()){
-        return 1;
-    }
-    return 0;
+    return symbol == other.getSymbol() && path == other.getPath();
 }

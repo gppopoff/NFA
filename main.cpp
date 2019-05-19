@@ -28,7 +28,7 @@ int main() {
     //gyz.epsilonclosure(epsi2,2);
     std::cout<<epsi2;
    // std::cout<<epsi[1] - '0';*/ //нещо
-    /*
+
     Trans t1('E',1),t2('a',2),t3('b',3),t4('E',3),t5('b',0),t6('E',0);
     State s1,s2,s3,s4;
     s1.addTrans(t1);
@@ -40,16 +40,49 @@ int main() {
     s4.addTrans(t5);
     s4.addTrans(t6);
     s4.makeFinal();
-    NFA n;
+    NFA n,n2;
     n.addState(s1);
     n.addState(s2);
     n.addState(s3);
     n.addState(s4);
-    n.print();
-    n.detemine();
-*/ // 1 автомат
 
-    Trans t1('E',1),t2('0',1),t3('0',2),t4('1',0),t5('1',1),t6('E',2),t7('0',2),t8('1',2);
+    n2.addState(s1);
+    n2.addState(s2);
+    n2.addState(s3);
+    n2.addState(s4);
+
+    NFA n3 = n.concat(n2);
+//    n3.print();
+
+    NFA n4 = n.un();
+    n4.print();
+
+
+//    std::cout<<n.isLanguageEmpty();
+//    NFA b = n.detemine();
+//    b.print();
+//    std::cout<<b.isDeterministic();
+
+        /*    s4.makeUnfinal();
+    NFA n2;
+    n2.addState(s1);
+    n2.addState(s2);
+    n2.addState(s3);
+    n2.addState(s4);
+    std::cout<<n2.isLanguageEmpty();*/ //EmptyLanguage тест
+//    n.print();
+//    n.detemine();
+
+    /*    std::cout<<n.recognize("aaaa")<<std::endl;
+    std::cout<<n.recognize("aabababba")<<std::endl;
+    std::cout<<n.recognize("aab")<<std::endl;
+    std::cout<<n.recognize("b")<<std::endl;
+    std::cout<<n.recognize("aabababbbaaaa")<<std::endl;
+    std::cout<<n.recognize("aaaba$")<<std::endl;
+    std::cout<<n.recognize("")<<std::endl;
+    std::cout<<n.recognize("aab")<<std::endl;*/ // тестове за recognize
+
+    /* Trans t1('E',1),t2('0',1),t3('0',2),t4('1',0),t5('1',1),t6('E',2),t7('0',2),t8('1',2);
     State s1,s2,s3;
     s1.addTrans(t1);
     s1.addTrans(t2);
@@ -66,6 +99,6 @@ int main() {
     n2.addState(s2);
     n2.addState(s3);
     n2.detemine();
-
+*/ //1 автомат
     return 0;
 }

@@ -18,7 +18,6 @@ public:
     State();
 //    void setTranss(Trans*);
 //    void setNumTrans(int);
-
     void setTranss(const Array<Trans>&);
     void makeFinal();
     void makeUnfinal();

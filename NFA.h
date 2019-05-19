@@ -11,31 +11,38 @@
 
 class NFA {
     Array<State> states;
-    char id[6];
+    char id[6]{};
     Array<int> finals;
     Array<int> initials;
 
-    bool isAlreadyInStr(std::string, int) const;
-    bool isAlreadyInStrArr(Array<std::string>, std::string) const;
-    std::string whereItGoesWith(std::string, char) const;
-    int getIndexFromArr(Array<std::string>,std::string) const;
+    bool isAlreadyInStr(const std::string&, int) const;
+    bool isAlreadyInStrArr(Array<std::string>,const std::string&) const;
+    std::string whereItGoesWith(const std::string&, char) const;
+    int getIndexFromArr(Array<std::string>,const std::string&) const;
+    void epsilonclosure(std::string &new_state, int index) const;
+    void epsilonclosureString(std::string&,const std::string&) const;
 public:
     NFA();
-    void epsilonclosure(std::string &new_state, int index) const;
-    void epsilonclosureString(std::string&,std::string) const;
-    NFA detemine() const;
 
+    Array<State> getStates() const;
+    Array<int> getInits() const ;
+    Array<int> getFinals() const ;
     const char* getId() const;
     void setId(char[5]);
-
     void makeStateFinal(int);
     void makeStateInitial(int);
     void makeStateNotFinal(int);
     void makeStateNotInitial(int);
     void removeState(int);
-    void addState(State);
+    void addState(const State&);
 
-    bool recognize(const char*,int,int&);
+    bool recognize(std::string);
+    bool isLanguageEmpty() const;
+    bool isDeterministic() const;
+    NFA detemine() const;
+    NFA unite(const NFA&) const ;
+    NFA concat(const NFA&) const ;
+    NFA un() const ;
 
     void print() const;
 

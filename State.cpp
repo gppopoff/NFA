@@ -4,10 +4,13 @@
 
 #include "State.h"
 #include <iostream>
+#include <algorithm>
 
 State::State() {
-    makeUnfinal();
-    makeUninitial();
+    isFinal = false;
+    isInitial = false;
+//    makeUnfinal();
+//    makeUninitial();
 }
 void State::setTranss(const Array<Trans> &other) {
     transitions = other;
@@ -26,7 +29,13 @@ void State::makeUninitial() {
 }
 
 void State::addTrans(Trans newTrans) {
-    transitions.addElement(newTrans);
+    bool add = true;
+    for (int i = 0; i < transitions.getNumberOfElements(); i++) {
+        if(transitions[i] == newTrans){
+            add = false;
+        }
+    }
+    if(add)transitions.addElement(newTrans);
 }
 void State::removeTrans(Trans oldTrans) {
    /* for(int i = 0 ; i < transitions.getNumberOfElements() ; i++){
@@ -45,13 +54,10 @@ void State::print() const {
     for(int i = 0; i < transitions.getNumberOfElements(); i++){
         transitions[i].print();
     }
-    if(isFinal)std::cout<<"Final\n";
-    if(isInitial)std::cout<<"Initial\n";
+    //if(isFinal)std::cout<<"Final\n";
+    //if(isInitial)std::cout<<"Initial\n";
 }
 
 bool State::operator==(const State & other) const {
-    if(transitions == other.getTranss() && isFinal == other.isFinal && isInitial == other.isInitial){
-        return true;
-    }
-    return false;
+    return transitions == other.getTranss() && isFinal == other.isFinal && isInitial == other.isInitial;
 }

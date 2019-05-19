@@ -15,7 +15,7 @@ public:
     void setSymbol(char s);
     void setPath(int p);
     char getSymbol() const { return symbol; }
-    char getPath() const { return path; }
+    int getPath() const { return path; }
     void print() const;
 
     bool operator==(const Trans&) const;
