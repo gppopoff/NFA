@@ -14,6 +14,7 @@ void Trans::setPath(int p) {
     path = p;
 }
 void Trans::print() const {
+    if(path != -1)
     std::cout<<symbol<< "->" << path << "  ";
 }
 bool Trans::operator==(const Trans & other) const {

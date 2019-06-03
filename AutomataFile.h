@@ -11,6 +11,8 @@ class AutomataFile {
     NFA automata;
     std::string fileName;
     bool fileOpened;
+public:
+
 
 };
 
