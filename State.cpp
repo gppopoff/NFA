@@ -9,8 +9,8 @@
 State::State() {
     isFinal = false;
     isInitial = false;
-//    makeUnfinal();
-//    makeUninitial();
+//    makeNotFinal();
+//    makeNotInitial();
 }
 void State::setTranss(const Array<Trans> &other) {
     transitions = other;
@@ -18,13 +18,13 @@ void State::setTranss(const Array<Trans> &other) {
 void State::makeFinal() {
     isFinal = true;
 }
-void State::makeUnfinal() {
+void State::makeNotFinal() {
     isFinal = false;
 }
 void State::makeInitial() {
     isInitial = true;
 }
-void State::makeUninitial() {
+void State::makeNotInitial() {
     isInitial = false;
 }
 

@@ -5,7 +5,7 @@
 #ifndef NFA_TRANS_H
 #define NFA_TRANS_H
 
-
+// Transition
 class Trans {
     char symbol;
     int path;

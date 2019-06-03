@@ -5,8 +5,12 @@
 #include <string.h>
 #include <iostream>
 #include <algorithm>
+#include <stack>
 
 const int SYMBOLS_IN_LANGUAGE = 36;
+const char CONCAT_SYMBOL = '.';
+const char UNION_SYMBOL = '+';
+const char KLINIS_STAR = '*';
 
 bool NFA::isAlreadyInStr(const std::string& str, int index) const {
     for(char i : str){
@@ -16,7 +20,7 @@ bool NFA::isAlreadyInStr(const std::string& str, int index) const {
     }
     return false;
 }
-bool NFA::isAlreadyInStrArr(Array<std::string> strArr,const std::string& str) const {
+bool NFA::isAlreadyInStrArr(const Array<std::string>& strArr,const std::string& str) const {
     for (int i = 0; i < strArr.getNumberOfElements(); i++) {
         if (strArr[i] == str) {
             return true;
@@ -40,7 +44,7 @@ std::string NFA::whereItGoesWith(const std::string& state, char symbol) const {
     if(nextState.empty()) nextState = std::to_string(-1);
     return nextState;
 }
-int NFA::getIndexFromArr(Array<std::string> strArr,const std::string& str) const {
+int NFA::getIndexFromArr(const Array<std::string>& strArr,const std::string& str) const {
     for (int i = 0; i < strArr.getNumberOfElements(); i++) {
         if(strArr[i] == str){
             return i;
@@ -63,8 +67,6 @@ void NFA::epsilonclosure(std::string &newState, int index) const {
     if(!isThereE) {
         return;
     }
-
-
 }
 void NFA::epsilonclosureString(std::string &newState,const std::string& oldState) const {
     for (char i : oldState) {
@@ -72,11 +74,125 @@ void NFA::epsilonclosureString(std::string &newState,const std::string& oldState
     }
 
 }
+bool NFA::isSymbolFromLanguage(char element) const {
+    return (element >= 'a' && element <= 'z') || (element >= '0' && element <= '9');
+}
+void NFA::addConcat(std::string& RegExpr) const {
+    for (int i = 0; i < RegExpr.length() - 1 ; i++) {
+        if((isSymbolFromLanguage(RegExpr[i]) && isSymbolFromLanguage(RegExpr[i+1]))
+        || (isSymbolFromLanguage(RegExpr[i]) && RegExpr[i+1] == '(')
+        || (isSymbolFromLanguage(RegExpr[i+1]) && RegExpr[i] == ')')
+        || ((RegExpr[i] == '*') && (RegExpr[i+1] == '(' || isSymbolFromLanguage(RegExpr[i+1])))){
+            RegExpr.insert(i+1,".");
+        }
+    }
+    std::cout<<RegExpr<<"\n";
+}
+bool NFA::lowerPriority(char first, char second) const {
+    return (first == CONCAT_SYMBOL && second == KLINIS_STAR)
+           || (first == UNION_SYMBOL && second == CONCAT_SYMBOL)
+           || (first == UNION_SYMBOL && second == KLINIS_STAR);
+}
+std::string NFA::toRPN(std::string& RegExpr) const {
+    std::string regExprInRPN;
+    std::stack<char> operations;
+    for (char i : RegExpr) {
+        if(isSymbolFromLanguage(i)){
+            regExprInRPN+=i;
+        }
+        else{
+            if(operations.empty()){
+                operations.push(i);
+            }
+            else if(i== '('){
+                operations.push('(');
+            }
+            else if(i== ')'){
+                while(operations.top()!= '('){
+                    regExprInRPN += operations.top();
+                    operations.pop();
+                }
+                operations.pop();
+            }
+            else if(!lowerPriority(i,operations.top())){
+                operations.push(i);
+            }else if(lowerPriority(i,operations.top())){
+                while(!operations.empty() && operations.top() != i ){
+                    regExprInRPN += operations.top();
+                    operations.pop();
+                }
+                operations.push(i);
+            }
 
-NFA::NFA() {
-    strcpy(id,"ID***\0");
+        }
+    }
+    while(!operations.empty()){
+        regExprInRPN += operations.top();
+        operations.pop();
+    }
+    std::cout<<regExprInRPN<<"\n";
+    return  regExprInRPN;
+}
+NFA NFA::performOperation(const NFA & first, const NFA & second, char operation) const {
+    if(operation == UNION_SYMBOL){
+//        first.unite(second).print();
+//        std::cout<<"==========================================\n";
+        return first.unite(second);
+    }else{
+//        first.concat(second).print();
+//        std::cout<<"==========================================\n";
+        return first.concat(second);
+    }
+}
+NFA NFA::performOperation(const NFA & first, char operation) const {
+//    first.un().print();
+//    std::cout<<"==========================================\n";
+    return first.un();
 }
 
+int NFA::nextId = 1;
+NFA::NFA() {
+    id = getNextId();
+}
+NFA::NFA(char symbol) {
+    id = getNextId();
+    State initial,final;
+    initial.addTrans(Trans(symbol,1));
+//    initial.makeInitial();
+//    final.makeFinal();
+    states.addElement(initial);
+    states.addElement(final);
+    makeStateInitial(0);
+    makeStateFinal(1);
+}
+
+NFA::NFA(std::string& RegExpr) {
+    // here we will make a automaton from regular expression
+    id = getNextId();
+    addConcat(RegExpr);
+    std::string regExprInRPN = toRPN(RegExpr);
+    std::stack<NFA> operands;
+    for(char i: regExprInRPN){
+        if(isSymbolFromLanguage(i)){
+            operands.push(NFA(i));
+        }else if(i == KLINIS_STAR){
+            NFA first = operands.top();
+            operands.pop();
+            operands.push(performOperation(first,KLINIS_STAR));
+        }else{
+            NFA first = operands.top();
+            operands.pop();
+            NFA second = operands.top();
+            operands.pop();
+            operands.push(performOperation(second,first,i));
+        }
+    }
+    *this = operands.top();
+}
+
+int NFA::getNextId() {
+    return nextId++;
+}
 Array<State> NFA::getStates() const {
     return states;
 }
@@ -86,33 +202,30 @@ Array<int> NFA::getInits() const {
 Array<int> NFA::getFinals() const {
     return finals;
 }
-const char* NFA::getId() const {
+int NFA::getId() const {
     return id;
 }
-void NFA::setId(char * newId) {
-    strncpy(id,newId,5);
-    id[5] = '\0';
-}
+
 void NFA::makeStateFinal(int index) {
     states[index].makeFinal();
     finals.addElement(index);
 }
+
 void NFA::makeStateInitial(int index) {
     states[index].makeInitial();
     initials.addElement(index);
 }
 void NFA::makeStateNotFinal(int index) {
-    states[index].makeUnfinal();
+    states[index].makeNotFinal();
     finals.removeElement(index);
 }
 void NFA::makeStateNotInitial(int index) {
-    states[index].makeUninitial();
+    states[index].makeNotInitial();
     initials.removeElement(index);
 }
 void NFA::removeState(int index) {
     states.removeElement(states[index]);
 }
-
 void NFA::addState(const State& newState) {
     states.addElement(newState);
     if(newState.isStateInitial()){
@@ -122,23 +235,24 @@ void NFA::addState(const State& newState) {
         finals.addElement(states.getNumberOfElements()-1);
     }
 }
-
-bool NFA::recognize(std::string word) {
+bool NFA::recognize(const std::string& word) {
     int stateIndex = 0;
     NFA temp = detemine();
-    //temp.print();
     if(word.length() == 0){
         return temp.getStates()[0].isStateFinal();
+    }
+    if(temp.isLanguageEmpty()){
+        return false;
     }
     for (int i = 0; i < word.length(); i++) {
         if(word[i] < 48 || word[i] > 122 || (word[i] > 57 && word[i] < 97)){
             std::cout<<"Unknown symbol";
             return false;
         }
+        //For every character of the word we check if in the current state there is
+        //transition with that character
         for (int j = 0; j < temp.getStates()[stateIndex].getTranss().getNumberOfElements(); j++) {
-
             if(word[i] == temp.getStates()[stateIndex].getTranss()[j].getSymbol()){
-                //std::cout<< "We are in with:" << word[i]<< "\n";
                 if(temp.getStates()[stateIndex].getTranss()[j].getPath() == -1){
                     return false;
                 } else {
@@ -156,10 +270,11 @@ bool NFA::recognize(std::string word) {
 bool NFA::isLanguageEmpty() const{
     NFA temp = detemine();
     const int numberOfStates = temp.getStates().getNumberOfElements();
-    int stepsToState[numberOfStates];
+    int* stepsToState = new int[numberOfStates];
     for (int l = 0; l < numberOfStates; l++) {
         stepsToState[l] = -1;
     }
+    // Kind of BFS ??? if we have reached the final state its OK
     stepsToState[0] = 0;
     bool madeChange = true;
     for (int i = 0; madeChange ; i++) {
@@ -180,7 +295,7 @@ bool NFA::isLanguageEmpty() const{
         }
 
     }
-
+    delete[] stepsToState;
     return true;
 }
 bool NFA::isDeterministic() const {
@@ -189,6 +304,8 @@ bool NFA::isDeterministic() const {
     } else{
         for (int i = 0; i < states.getNumberOfElements(); i++) {
             bool pathExist[SYMBOLS_IN_LANGUAGE] = {false};
+            // for each state we check if there is Epsilon-transition or
+            // if we already have transition with that symbol
             for (int j = 0; j < states[i].getTranss().getNumberOfElements(); j++) {
                 if(states[i].getTranss()[j].getSymbol() == 'E' ||
                         pathExist[states[i].getTranss()[j].getPath()] != 0){
@@ -202,15 +319,20 @@ bool NFA::isDeterministic() const {
     }
     return true;
 }
+
 NFA NFA::detemine() const {
+    if(this->isDeterministic()){
+        return *this;
+    }
     NFA newOne;
     Array<std::string> newStates;
     std::string start;
+
+    // Standard way to determine an automaton with epsilon transitions
     for (int i = 0; i < initials.getNumberOfElements(); i++) {
         epsilonclosure(start,initials[i]);
     }
     std::string stateWithSymbol;
-
     State newInitial;
     newInitial.makeInitial();
     newStates.addElement(start);
@@ -232,6 +354,13 @@ NFA NFA::detemine() const {
         }else{
             newInitial.addTrans(Trans(symbol,-1));
         }
+        for (int k = 0; k < finals.getNumberOfElements(); k++) {
+            for (char l : tempState) {
+                if(finals[k] == l - '0'){
+                    newInitial.makeFinal();
+                }
+            }
+        }
     }
     newOne.addState(newInitial);
     for (int i = 1; i < newStates.getNumberOfElements() ; i++) {
@@ -246,9 +375,7 @@ NFA NFA::detemine() const {
             }
             stateWithSymbol = whereItGoesWith(newStates[i],symbol);
             if(stateWithSymbol != "-1"){
-//                std::cout<<"\n--"<<stateWithSymbol<<"--\n";
                 epsilonclosureString(tempState,stateWithSymbol);
-//                std::cout<<tempState;
                 if(!isAlreadyInStrArr(newStates,tempState)){
                     newStates.addElement(tempState);
                 }
@@ -265,16 +392,15 @@ NFA NFA::detemine() const {
                     }
                 }
             }
-
-
         }
         if (i == 0) newState.makeInitial();
         newOne.addState(newState);
     }
-    //newOne.print();
     return newOne;
 }
+
 NFA NFA::unite(const NFA& other) const {
+    // Adding the states from the other automaton and making them finals and initials
     const int numberOfStates = this->getStates().getNumberOfElements();
     NFA newOne = *this;
     for (int i = 0; i < other.getStates().getNumberOfElements() ; i++) {
@@ -293,7 +419,11 @@ NFA NFA::unite(const NFA& other) const {
     }
     return newOne;
 }
+
 NFA NFA::concat(const NFA& other) const {
+    //Adding the states from the other automaton, saving others finals but removing initials,
+    // adding initials from the first one
+    // and adding Epsilon-transition from first finals to others initials
     const int numberOfStates = other.getStates().getNumberOfElements();
     NFA newOne = other;
     for (int i = 0; i < this->getStates().getNumberOfElements() ; i++) {
@@ -317,7 +447,9 @@ NFA NFA::concat(const NFA& other) const {
     }
     return newOne;
 }
+
 NFA NFA::un() const {
+    // Adding Epsion-transitions from finals states to initials
     NFA newOne;
     for (int i = 0; i < this->getStates().getNumberOfElements() ; i++) {
         State temp;
@@ -336,6 +468,10 @@ NFA NFA::un() const {
         }
         newOne.addState(temp);
     }
+    State epsilon;
+    epsilon.makeFinal();
+    epsilon.makeInitial();
+    newOne.addState(epsilon);
     return newOne;
 }
 
@@ -349,3 +485,10 @@ void NFA::print() const {
         std::cout<<"\n------\n";
     }
 }
+
+
+
+
+
+
+

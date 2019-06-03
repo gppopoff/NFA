@@ -10,8 +10,6 @@
 
 class State {
     Array<Trans> transitions;
-//    Trans *transitions;
-//    int numTrans;
     bool isFinal,isInitial;
 
 public:
@@ -20,9 +18,9 @@ public:
 //    void setNumTrans(int);
     void setTranss(const Array<Trans>&);
     void makeFinal();
-    void makeUnfinal();
+    void makeNotFinal();
     void makeInitial();
-    void makeUninitial();
+    void makeNotInitial();
 
     Array<Trans> getTranss() const { return transitions; };
     bool isStateFinal() const { return isFinal; }

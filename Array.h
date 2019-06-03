@@ -4,6 +4,7 @@
 #ifndef NFA_ARRAY_H
 #define NFA_ARRAY_H
 
+// А template dynamic array class from seminars with few changes
 template<typename T>
 class Array {
     T* arr;
