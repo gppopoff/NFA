@@ -4,6 +4,7 @@
 #include "State.h"
 #include "NFA.h"
 #include "filefunctions.h"
+#include "ProjectNFA.h"
 
 int main() {
 
@@ -51,7 +52,6 @@ int main() {
     n.addState(s4);
     n.detemine().print();
 */
-
 
 //    NFA n5 = n.detemine();
 //    n5.print();
@@ -115,11 +115,24 @@ int main() {
     test.unite(NFA()).print();
 */
 
+/*
     std::string b = "(ab)*((ab)+c*)";
 //    std::string b = "ab*+c";
 //    std::string b = "a+b+c";
     NFA a(b);
     a.print();
     a.detemine().print();
+*/
+
+    ProjectNFA a;
+    a.open("automaton.txt");
+    a.listNFAs();
+    a.printNFA(1);
+    a.unNFA(1);
+    a.printNFA(2);
+    a.saveNFA(2,"automaton2.txt");
+    a.reg("(ab)*((ab)+c*)");
+    a.printNFA(4);
+
     return 0;
 }

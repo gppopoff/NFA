@@ -24,7 +24,7 @@ class NFA {
     int getIndexFromArr(const std::vector<std::vector<int>>& vecArr,const std::vector<int>& vec) const;
     void epsilonclosure(std::vector<int> &newState, int index) const;
     void epsilonclosureVector(std::vector<int> &newState,const std::vector<int> &oldState) const ;
-    void addConcat(std::string&) const;
+    std::string addConcat(const std::string&) const;
     bool isSymbolFromLanguage(char)const;
     bool lowerPriority(char,char) const;
     std::string toRPN(std::string&) const ;
@@ -34,7 +34,7 @@ class NFA {
 public:
     NFA();
     NFA(char);
-    NFA(std::string&);
+    NFA(const std::string&);
 
     static int getNextId();
 
@@ -61,6 +61,8 @@ public:
     NFA un() const ;
 
     void print() const;
+
+    NFA& operator=(const NFA&);
 
 };
 

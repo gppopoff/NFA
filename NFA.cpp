@@ -64,7 +64,8 @@ void NFA::epsilonclosureVector(std::vector<int> &newState,const std::vector<int>
 bool NFA::isSymbolFromLanguage(char element) const {
     return (element >= 'a' && element <= 'z') || (element >= '0' && element <= '9');
 }
-void NFA::addConcat(std::string& RegExpr) const {
+std::string NFA::addConcat(const std::string& RegExprOld) const {
+    std::string RegExpr = RegExprOld;
     for (int i = 0; i < RegExpr.length() - 1 ; i++) {
         if((isSymbolFromLanguage(RegExpr[i]) && isSymbolFromLanguage(RegExpr[i+1]))
         || (isSymbolFromLanguage(RegExpr[i]) && RegExpr[i+1] == '(')
@@ -73,7 +74,7 @@ void NFA::addConcat(std::string& RegExpr) const {
             RegExpr.insert(i+1,".");
         }
     }
-    std::cout<<RegExpr<<"\n";
+    return RegExpr;
 }
 bool NFA::lowerPriority(char first, char second) const {
     return (first == CONCAT_SYMBOL && second == KLINIS_STAR)
@@ -171,11 +172,11 @@ NFA::NFA(char symbol) {
     makeStateFinal(1);
 }
 
-NFA::NFA(std::string& RegExpr) {
+NFA::NFA(const std::string& RegExpr) {
     // here we will make a automaton from regular expression
     id = getNextId();
-    addConcat(RegExpr);
-    std::string regExprInRPN = toRPN(RegExpr);
+    std::string coolOne = addConcat(RegExpr);
+    std::string regExprInRPN = toRPN(coolOne);
     std::stack<NFA> operands;
     for(char i: regExprInRPN){
         if(isSymbolFromLanguage(i)){
@@ -511,6 +512,7 @@ NFA NFA::un() const {
 }
 
 void NFA::print() const {
+    std::cout<<"Automata Id:"<<id<<"\n";
     for(int i=0;i<states.getNumberOfElements();i++){
         if(states[i].isStateInitial()) std::cout<<"->";
         if(states[i].isStateFinal()) {
@@ -536,6 +538,15 @@ bool NFA::isAlreadyInVecArr(const std::vector<std::vector<int>>& vecArr,const st
         }
     }
     return false;
+}
+
+NFA &NFA::operator=(const NFA& other) {
+    if(this != &other){
+        states = other.states;
+        finals = other.finals;
+        initials = other.initials;
+    }
+    return *this;
 }
 
 
