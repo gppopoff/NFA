@@ -123,6 +123,7 @@ int main() {
     a.print();
     a.detemine().print();
 */
+/*
 
     ProjectNFA a;
     a.open("automaton.txt");
@@ -133,6 +134,8 @@ int main() {
     a.saveNFA(2,"automaton2.txt");
     a.reg("(ab)*((ab)+c*)");
     a.printNFA(4);
-
+*/
+    ProjectNFA test;
+    test.Activate();
     return 0;
 }

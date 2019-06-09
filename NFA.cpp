@@ -118,7 +118,6 @@ std::string NFA::toRPN(std::string& RegExpr) const {
         regExprInRPN += operations.top();
         operations.pop();
     }
-    std::cout<<regExprInRPN<<"\n";
     return  regExprInRPN;
 }
 NFA NFA::performOperation(const NFA & first, const NFA & second, char operation) const {

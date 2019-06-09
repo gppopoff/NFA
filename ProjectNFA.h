@@ -25,7 +25,8 @@ public:
     void concatNFAs(int,int);
     void unNFA(int);
     void reg(const std::string&);
-    void InfiniteNFA(int id)const;
+    void infiniteNFA(int id)const;
+    void Activate();
 
 };
 

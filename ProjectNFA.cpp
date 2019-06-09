@@ -5,6 +5,7 @@
 #include "ProjectNFA.h"
 #include <iostream>
 #include <fstream>
+#include <regex>
 
 void ProjectNFA::open(const std::string& fileName) {
     std::ifstream in(fileName);
@@ -101,6 +102,7 @@ void ProjectNFA::saveNFA(int id, const std::string &fileName) const {
                 out<<i.getInits()[l]<<" ";
             }
             opened = true;
+            std::cout<<"Successfully saved automata with ID:"<<id<<" in \""<<fileName<<"\".\n";
             break;
         }
     }
@@ -226,13 +228,16 @@ void ProjectNFA::unNFA(int id) {
 }
 
 void ProjectNFA::reg(const std::string& word) {
+    for (int i = 0; i < word.length(); i++) {
+
+    }
     NFA newOne(word);
     list.push_back(newOne);
     std::cout<<"New automata added with ID:"<<newOne.getId()<<".\n";
 
 }
 
-void ProjectNFA::InfiniteNFA(int id) const {
+void ProjectNFA::infiniteNFA(int id) const {
     bool printed = false;
     for(const auto& i: list){
         if(i.getId() == id){
@@ -247,5 +252,86 @@ void ProjectNFA::InfiniteNFA(int id) const {
     }
     if(!printed){
         std::cout<<"Invalid ID!\n";
+    }
+}
+
+void ProjectNFA::Activate() {
+
+    const std::string openRegExpr = R"(^open (([^\"\s]+)|(\"([^\"]+)\"))$)";
+    const std::string listRegExpr = R"(^list$)";
+    const std::string printRegExpr = R"(^print ([0-9]+)$)";
+    const std::string saveRegExpr = R"(^save ([0-9]+) (([^\"\s]+)|(\"([^\"]+)\"))$)";
+    const std::string exitRegExpr = R"(^exit$)";
+    const std::string emptyRegExpr = R"(^empty ([0-9]+)$)";
+    const std::string infiniteRegExpr = R"(^infinite ([0-9]+)$)";
+    const std::string deterministicRegExpr = R"(^deterministic ([0-9]+)$)";
+    const std::string recognizeRegExpr = R"(^recognize ([0-9]+) ([a-z0-9]+)$)";
+    const std::string unionRegExpr = R"(^union ([0-9]+) ([0-9]+)$)";
+    const std::string concatRegExpr = R"(^concat ([0-9]+) ([0-9]+)$)";
+    const std::string unRegExpr = R"(^un ([0-9]+)$)";
+    const std::string regExpr = R"(^reg ([a-z0-9*.\(\)+]+)$)";
+
+    //to get the file name, concatenate capture group 2 with capture group 4
+
+    const std::sregex_iterator end;
+
+    const std::regex openPattern = std::regex(openRegExpr);
+    const std::regex listPattern = std::regex(listRegExpr);
+    const std::regex printPattern = std::regex(printRegExpr);
+    const std::regex savePattern = std::regex(saveRegExpr);
+    const std::regex exitPattern = std::regex(exitRegExpr);
+    const std::regex emptyPattern = std::regex(emptyRegExpr);
+    const std::regex infinitePattern = std::regex(infiniteRegExpr);
+    const std::regex deterministicPattern = std::regex(deterministicRegExpr);
+    const std::regex recognizePattern = std::regex(recognizeRegExpr);
+    const std::regex unionPattern = std::regex(unionRegExpr);
+    const std::regex concatPattern = std::regex(concatRegExpr);
+    const std::regex unPattern = std::regex(unRegExpr);
+    const std::regex regPattern = std::regex(regExpr);
+
+    std::sregex_iterator iter;
+
+    std::string text;
+
+    bool run = true;
+    while (run) {
+        std::cout << ">";
+        getline(std::cin, text);
+
+        if ((iter = std::sregex_iterator(text.begin(), text.end(), exitPattern)) != end) {
+            std::cout << "exiting...";
+            run = false;
+        } else if ((iter = std::sregex_iterator(text.begin(), text.end(), openPattern)) != end) {
+            std::string fileName = std::string((*iter)[2]) + std::string((*iter)[4]);
+            open(fileName);
+        } else if ((iter = std::sregex_iterator(text.begin(), text.end(), listPattern)) != end) {
+            listNFAs();
+        } else if ((iter = std::sregex_iterator(text.begin(), text.end(), printPattern)) != end) {
+            printNFA(std::stoi((*iter)[1]));
+        } else if ((iter = std::sregex_iterator(text.begin(), text.end(), savePattern)) != end) {
+            std::string fileName = std::string((*iter)[3]) + std::string((*iter)[5]);
+            saveNFA(std::stoi((*iter)[1]), fileName);
+        } else if ((iter = std::sregex_iterator(text.begin(), text.end(), emptyPattern)) != end) {
+            emptyNFA(std::stoi((*iter)[1]));
+        } else if ((iter = std::sregex_iterator(text.begin(), text.end(), infinitePattern)) != end) {
+            infiniteNFA(std::stoi((*iter)[1]));
+        } else if ((iter = std::sregex_iterator(text.begin(), text.end(), deterministicPattern)) != end) {
+            deterministicNFA(std::stoi((*iter)[1]));
+        } else if ((iter = std::sregex_iterator(text.begin(), text.end(), recognizePattern)) != end) {
+            std::string word = std::string((*iter)[2]);
+            recognizeWord(std::stoi((*iter)[1]),word);
+        } else if ((iter = std::sregex_iterator(text.begin(), text.end(), unionPattern)) != end) {
+            unionNFAs(std::stoi((*iter)[1]),std::stoi((*iter)[2]));
+        } else if ((iter = std::sregex_iterator(text.begin(), text.end(), concatPattern)) != end) {
+            concatNFAs(std::stoi((*iter)[1]),std::stoi((*iter)[2]));
+        } else if ((iter = std::sregex_iterator(text.begin(), text.end(), unPattern)) != end) {
+            unNFA(std::stoi((*iter)[1]));
+        } else if ((iter = std::sregex_iterator(text.begin(), text.end(), regPattern)) != end){
+            reg(std::string((*iter)[1]));
+        }else
+        {
+            std::cout<<"Error : invalid command syntax."<<std::endl;
+        }
+        std::cout<<std::endl;
     }
 }
