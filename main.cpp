@@ -3,7 +3,6 @@
 #include "Trans.h"
 #include "State.h"
 #include "NFA.h"
-#include "filefunctions.h"
 #include "ProjectNFA.h"
 
 int main() {

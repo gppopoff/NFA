@@ -48,6 +48,7 @@ void ProjectNFA::open(const std::string& fileName) {
 
         delete[] states;
         std::cout<<"File \""<<fileName<<"\" successfully opened.\n";
+        std::cout<<"New automata added with ID:"<<automata.getId()<<".\n";
         list.push_back(automata);
     } else{
         std::cout<<"Error! Invalid file name\n";
@@ -97,7 +98,7 @@ void ProjectNFA::saveNFA(int id, const std::string &fileName) const {
             }
             out<<"\n";
 
-            out<<i.getFinals().getNumberOfElements()<<" ";
+            out<<i.getInits().getNumberOfElements()<<" ";
             for (int l = 0; l <i.getInits().getNumberOfElements() ; l++) {
                 out<<i.getInits()[l]<<" ";
             }
@@ -148,14 +149,31 @@ void ProjectNFA::deterministicNFA(int id) const {
     }
 }
 
+void ProjectNFA::determineNFA(int id) {
+    bool printed = false;
+    for(const auto& i: list){
+        if(i.getId() == id){
+            NFA newOne;
+            newOne = i.detemine();
+            list.push_back(newOne);
+            std::cout<<"New automata added with ID:"<<newOne.getId()<<".\n";
+            printed = true;
+            break;
+        }
+    }
+    if(!printed){
+        std::cout<<"Invalid ID!\n";
+    }
+}
+
 void ProjectNFA::recognizeWord(int id, const std::string & word) const {
     bool printed = false;
     for(const auto& i: list){
         if(i.getId() == id){
             if(i.recognize(word)){
-                std::cout<<"Automata with ID:"<<id<<" recognizes the word:"<<word<<".\n";
+                std::cout<<"Automata with ID:"<<id<<" recognizes the word:\""<<word<<"\".\n";
             }else{
-                std::cout<<"Automata with ID:"<<id<<"do not recognizes the word:"<<word<<".\n";
+                std::cout<<"Automata with ID:"<<id<<" do not recognizes the word:\""<<word<<"\".\n";
             }
             printed = true;
             break;
@@ -172,10 +190,11 @@ void ProjectNFA::unionNFAs(int id1, int id2) {
         if(i.getId() == id1){
             for(const auto& j: list){
                 if(j.getId() == id2){
-                    NFA newOne;
+                    /*NFA newOne;
                     newOne = i.unite(j);
-                    list.push_back(newOne);
-                    std::cout<<"New automata added with ID:"<<newOne.getId()<<".\n";
+                    i.unite(j).print();*/
+                    list.push_back(i.unite(j));
+                    std::cout<<"New automata added with ID:"<<list.back().getId()<<".\n";
                     printed = true;
                     break;
                     }
@@ -194,10 +213,10 @@ void ProjectNFA::concatNFAs(int id1, int id2) {
         if(i.getId() == id1){
             for(const auto& j: list){
                 if(j.getId() == id2){
-                    NFA newOne;
-                    newOne = i.concat(j);
-                    list.push_back(newOne);
-                    std::cout<<"New automata added with ID:"<<newOne.getId()<<".\n";
+/*                    NFA newOne;
+                    newOne = i.concat(j);*/
+                    list.push_back(i.concat(j));
+                    std::cout<<"New automata added with ID:"<<list.back().getId()<<".\n";
                     printed = true;
                     break;
                 }
@@ -214,10 +233,10 @@ void ProjectNFA::unNFA(int id) {
     bool printed = false;
     for(const auto& j: list){
         if(j.getId() == id){
-            NFA newOne;
-            newOne = j.un();
-            list.push_back(newOne);
-            std::cout<<"New automata added with ID:"<<newOne.getId()<<".\n";
+/*            NFA newOne;
+            newOne = j.un();*/
+            list.push_back(j.un());
+            std::cout<<"New automata added with ID:"<<list.back().getId()<<".\n";
             printed = true;
             break;
         }
@@ -265,11 +284,12 @@ void ProjectNFA::Activate() {
     const std::string emptyRegExpr = R"(^empty ([0-9]+)$)";
     const std::string infiniteRegExpr = R"(^infinite ([0-9]+)$)";
     const std::string deterministicRegExpr = R"(^deterministic ([0-9]+)$)";
+    const std::string determineRegExpr = R"(^determine ([0-9]+)$)";
     const std::string recognizeRegExpr = R"(^recognize ([0-9]+) ([a-z0-9]+)$)";
     const std::string unionRegExpr = R"(^union ([0-9]+) ([0-9]+)$)";
     const std::string concatRegExpr = R"(^concat ([0-9]+) ([0-9]+)$)";
     const std::string unRegExpr = R"(^un ([0-9]+)$)";
-    const std::string regExpr = R"(^reg ([a-z0-9*.\(\)+]+)$)";
+    const std::string regExpr = R"(^reg ([a-z0-9*.U\(\)+]+)$)";
 
     //to get the file name, concatenate capture group 2 with capture group 4
 
@@ -283,6 +303,7 @@ void ProjectNFA::Activate() {
     const std::regex emptyPattern = std::regex(emptyRegExpr);
     const std::regex infinitePattern = std::regex(infiniteRegExpr);
     const std::regex deterministicPattern = std::regex(deterministicRegExpr);
+    const std::regex determinePattern = std::regex(determineRegExpr);
     const std::regex recognizePattern = std::regex(recognizeRegExpr);
     const std::regex unionPattern = std::regex(unionRegExpr);
     const std::regex concatPattern = std::regex(concatRegExpr);
@@ -293,14 +314,13 @@ void ProjectNFA::Activate() {
 
     std::string text;
 
-    bool run = true;
-    while (run) {
+    while (true) {
         std::cout << ">";
         getline(std::cin, text);
 
         if ((iter = std::sregex_iterator(text.begin(), text.end(), exitPattern)) != end) {
             std::cout << "exiting...";
-            run = false;
+            return;
         } else if ((iter = std::sregex_iterator(text.begin(), text.end(), openPattern)) != end) {
             std::string fileName = std::string((*iter)[2]) + std::string((*iter)[4]);
             open(fileName);
@@ -317,7 +337,9 @@ void ProjectNFA::Activate() {
             infiniteNFA(std::stoi((*iter)[1]));
         } else if ((iter = std::sregex_iterator(text.begin(), text.end(), deterministicPattern)) != end) {
             deterministicNFA(std::stoi((*iter)[1]));
-        } else if ((iter = std::sregex_iterator(text.begin(), text.end(), recognizePattern)) != end) {
+        } else if ((iter = std::sregex_iterator(text.begin(), text.end(), determinePattern)) != end) {
+            determineNFA(std::stoi((*iter)[1]));
+        }   else if ((iter = std::sregex_iterator(text.begin(), text.end(), recognizePattern)) != end) {
             std::string word = std::string((*iter)[2]);
             recognizeWord(std::stoi((*iter)[1]),word);
         } else if ((iter = std::sregex_iterator(text.begin(), text.end(), unionPattern)) != end) {

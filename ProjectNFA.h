@@ -20,6 +20,7 @@ public:
     void saveNFA(int id,const std::string&)const ;
     void emptyNFA(int id) const;
     void deterministicNFA(int id)const;
+    void determineNFA(int id);
     void recognizeWord(int id,const std::string&) const;
     void unionNFAs(int,int);
     void concatNFAs(int,int);

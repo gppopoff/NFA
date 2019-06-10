@@ -38,9 +38,9 @@ public:
 
     static int getNextId();
 
-    Array<State> getStates() const;
-    Array<int> getInits() const ;
-    Array<int> getFinals() const ;
+    const Array<State>& getStates() const;
+    const Array<int>& getInits() const ;
+    const Array<int>& getFinals() const ;
     int getId() const;
 
     void makeStateFinal(int);

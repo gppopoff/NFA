@@ -22,7 +22,7 @@ public:
     void makeInitial();
     void makeNotInitial();
 
-    Array<Trans> getTranss() const { return transitions; };
+    const Array<Trans>& getTranss() const { return transitions; };
     bool isStateFinal() const { return isFinal; }
     bool isStateInitial() const { return isInitial; }
 

@@ -8,11 +8,13 @@
 #include <stack>
 #include <cmath>
 #include <vector>
+#include <queue>
 
 const int SYMBOLS_IN_LANGUAGE = 36;
 const char CONCAT_SYMBOL = '.';
-const char UNION_SYMBOL = '+';
+const char UNION_SYMBOL = 'U';
 const char KLINIS_STAR = '*';
+const char UN_SYMBOL = '+';
 
 
 std::vector<int> NFA::whereItGoesWith(const std::vector<int>& state, char symbol) const {
@@ -91,21 +93,18 @@ std::string NFA::toRPN(std::string& RegExpr) const {
         else{
             if(operations.empty()){
                 operations.push(i);
-            }
-            else if(i== '('){
+            } else if(i== '('){
                 operations.push('(');
-            }
-            else if(i== ')'){
+            } else if(i== ')'){
                 while(operations.top()!= '('){
                     regExprInRPN += operations.top();
                     operations.pop();
                 }
                 operations.pop();
-            }
-            else if(!lowerPriority(i,operations.top())){
+            } else if(!lowerPriority(i,operations.top())){
                 operations.push(i);
-            }else if(lowerPriority(i,operations.top())){
-                while(!operations.empty() && operations.top() != i ){
+            } else if(lowerPriority(i,operations.top())){
+                while(!operations.empty() && operations.top() != i && operations.top()!= '('){
                     regExprInRPN += operations.top();
                     operations.pop();
                 }
@@ -122,18 +121,13 @@ std::string NFA::toRPN(std::string& RegExpr) const {
 }
 NFA NFA::performOperation(const NFA & first, const NFA & second, char operation) const {
     if(operation == UNION_SYMBOL){
-//        first.unite(second).print();
-//        std::cout<<"==========================================\n";
         return first.unite(second);
     }else{
-//        first.concat(second).print();
-//        std::cout<<"==========================================\n";
         return first.concat(second);
     }
 }
 NFA NFA::performOperation(const NFA & first, char operation) const {
-//    first.un().print();
-//    std::cout<<"==========================================\n";
+
     if(operation == KLINIS_STAR)
     return first.un();
     else return 0;
@@ -197,13 +191,13 @@ NFA::NFA(const std::string& RegExpr) {
 int NFA::getNextId() {
     return nextId++;
 }
-Array<State> NFA::getStates() const {
+const Array<State>& NFA::getStates() const {
     return states;
 }
-Array<int> NFA::getInits() const {
+const Array<int>& NFA::getInits() const {
     return initials;
 }
-Array<int> NFA::getFinals() const {
+const Array<int>& NFA::getFinals() const {
     return finals;
 }
 
@@ -254,31 +248,31 @@ bool NFA::recognize(const std::string& word) const {
     if(temp.isLanguageEmpty()){
         return false;
     }
-    for (int i = 0; i < word.length(); i++) {
-        if(word[i] < 48 || word[i] > 122 || (word[i] > 57 && word[i] < 97)){
+    for (char i : word) {
+        if(i < 48 || i > 122 || (i > 57 && i < 97)){
             std::cout<<"Unknown symbol";
             return false;
         }
         //For every character of the word we check if in the current state there is
         //transition with that character
         for (int j = 0; j < temp.getStates()[stateIndex].getTranss().getNumberOfElements(); j++) {
-            if(word[i] == temp.getStates()[stateIndex].getTranss()[j].getSymbol()){
+            if(i == temp.getStates()[stateIndex].getTranss()[j].getSymbol()){
                 if(temp.getStates()[stateIndex].getTranss()[j].getPath() == -1){
                     return false;
                 } else {
                     stateIndex = temp.getStates()[stateIndex].getTranss()[j].getPath();
-                    if(temp.getStates()[stateIndex].isStateFinal() && i == word.length()-1){
+                    /*if(temp.getStates()[stateIndex].isStateFinal() && i == word.length()-1){
                         return true;
-                    }
+                    }*/
                 }
             }
         }
     }
+    return temp.getStates()[stateIndex].isStateFinal();
 
-    return false;
 }
 bool NFA::isLanguageEmpty() const{
-    NFA temp = detemine();
+    /* NFA temp = detemine();
     const int numberOfStates = temp.getStates().getNumberOfElements();
     int* stepsToState = new int[numberOfStates];
     for (int l = 0; l < numberOfStates; l++) {
@@ -306,7 +300,38 @@ bool NFA::isLanguageEmpty() const{
 
     }
     delete[] stepsToState;
-    return true;
+    return true;*/ // old method
+    //BFS - if current state is final - its not empty
+    NFA temp;
+    if(!isDeterministic()){
+        temp = this->detemine();
+    }else{
+        temp = *this;
+    }
+    const int numberOfStates = temp.getStates().getNumberOfElements();
+    bool* visitedStates = new bool[numberOfStates];
+    for (int i = 0; i < numberOfStates; i++) {
+        visitedStates[i] = false;
+    }
+    int currentState;
+    std::queue<int> queue;
+    queue.push(temp.getInits()[0]);
+    visitedStates[temp.getInits()[0]] = true;
+    while(!queue.empty()){
+        currentState = queue.front();
+        queue.pop();
+        if(temp.getStates()[currentState].isStateFinal()){
+            return false;
+        }
+        for (int i = 0; i < temp.getStates()[currentState].getTranss().getNumberOfElements(); i++) {
+            if(!visitedStates[temp.getStates()[currentState].getTranss()[i].getPath()]
+                && temp.getStates()[currentState].getTranss()[i].getPath()!= -1) {
+                visitedStates[temp.getStates()[currentState].getTranss()[i].getPath()] = true;
+                queue.push(temp.getStates()[currentState].getTranss()[i].getPath());
+            }
+        }
+    }
+    return  true;
 }
 bool NFA::isDeterministic() const {
     if(initials.getNumberOfElements() > 1){
@@ -317,21 +342,33 @@ bool NFA::isDeterministic() const {
             // for each state we check if there is Epsilon-transition or
             // if we already have transition with that symbol
             for (int j = 0; j < states[i].getTranss().getNumberOfElements(); j++) {
-                if(states[i].getTranss()[j].getSymbol() == 'E' ||
-                        pathExist[states[i].getTranss()[j].getPath()] != 0){
-                    return false;
-                } else{
-                    if(states[i].getTranss()[j].getPath()!= -1)
-                    pathExist[states[i].getTranss()[j].getPath()] = true;
+                if(states[i].getTranss()[j].getPath()!= -1){
+                    if(states[i].getTranss()[j].getSymbol() == 'E'){
+                        return false;
+                    } else {
+                        int symbol;
+                        if(states[i].getTranss()[j].getSymbol() <= '9'
+                           && states[i].getTranss()[j].getSymbol() >= '0' ){
+                            symbol = states[i].getTranss()[j].getSymbol() - '0';
+                        }else{
+                            symbol = 10 + states[i].getTranss()[j].getSymbol() - 'a';
+                        }
+                        if(pathExist[symbol]!= 0){
+                            //return false;
+                        }else{
+                            pathExist[symbol] = true;
+                        }
+                    }
                 }
+
             }
         }
     }
     return true;
 }
-
 bool NFA::isLanguageInfinite() const {
-    NFA Copy;
+    // traditional method - searching for word with length between n and 2n
+   /* NFA Copy;
     if(!isDeterministic()){
         Copy = this->detemine();
     }else{
@@ -353,6 +390,64 @@ bool NFA::isLanguageInfinite() const {
             }
         }
     }
+    return false;*/
+//  Here we search for a loop - if we find one we check if there is final state
+//  that is reachable from the loop - with BFS.
+    NFA temp;
+    if(!isDeterministic()){
+        temp = this->detemine();
+    }else{
+        temp = *this;
+    }
+    const int numberOfStates = temp.getStates().getNumberOfElements();
+    bool* visitedStates = new bool[numberOfStates];
+    for (int i = 0; i < numberOfStates; i++) {
+        visitedStates[i] = false;
+    }
+    int currentState = temp.getInits()[0];
+    std::queue<int> queue;
+    queue.push(temp.getInits()[0]);
+    visitedStates[temp.getInits()[0]] = true;
+    bool isThereLoop = false;
+    while(!queue.empty() && !isThereLoop){
+        currentState = queue.front();
+        queue.pop();
+        for (int i = 0; i < temp.getStates()[currentState].getTranss().getNumberOfElements(); i++) {
+            if(!visitedStates[temp.getStates()[currentState].getTranss()[i].getPath()]
+               && temp.getStates()[currentState].getTranss()[i].getPath()!= -1) {
+                visitedStates[temp.getStates()[currentState].getTranss()[i].getPath()] = true;
+                queue.push(temp.getStates()[currentState].getTranss()[i].getPath());
+            }else{
+                if(temp.getStates()[currentState].getTranss()[i].getPath()!= -1){
+                    isThereLoop = true;
+                    break;
+                }
+            }
+        }
+    }
+    if(!isThereLoop){
+        return false;
+    }
+    for (int i = 0; i < numberOfStates; i++) {
+        visitedStates[i] = false;
+    }
+    std::queue<int> queue2;
+    queue2.push(currentState);
+    visitedStates[currentState] = true;
+    while(!queue2.empty()){
+        currentState = queue2.front();
+        if(temp.getStates()[currentState].isStateFinal()){
+            return true;
+        }
+        queue2.pop();
+        for (int i = 0; i < temp.getStates()[currentState].getTranss().getNumberOfElements(); i++) {
+            if (!visitedStates[temp.getStates()[currentState].getTranss()[i].getPath()]
+                && temp.getStates()[currentState].getTranss()[i].getPath()!= -1) {
+                visitedStates[temp.getStates()[currentState].getTranss()[i].getPath()] = true;
+                queue2.push(temp.getStates()[currentState].getTranss()[i].getPath());
+            }
+        }
+    }
     return false;
 }
 NFA NFA::detemine() const {
@@ -367,7 +462,7 @@ NFA NFA::detemine() const {
     for (int i = 0; i < initials.getNumberOfElements(); i++) {
         epsilonclosure(start,initials[i]);
     }
-    std::vector<int> stateWithSymbol;
+    std::vector<int> stateWithSymbol2;
     State newInitial;
     newInitial.makeInitial();
     newStates.push_back(start);
@@ -379,10 +474,10 @@ NFA NFA::detemine() const {
         }else{
             symbol = i + 'a' - 10;
         }
-        stateWithSymbol = whereItGoesWith(start,symbol);
+        stateWithSymbol2 = whereItGoesWith(start,symbol);
 
-        if(stateWithSymbol[0] != -1){
-            epsilonclosureVector(tempState,stateWithSymbol);
+        if(stateWithSymbol2[0] != -1){
+            epsilonclosureVector(tempState,stateWithSymbol2);
             if(!isAlreadyInVecArr(newStates,tempState)){
                 newStates.push_back(tempState);
             }
@@ -391,7 +486,7 @@ NFA NFA::detemine() const {
             newInitial.addTrans(Trans(symbol,-1));
         }
         for (int k = 0; k < finals.getNumberOfElements(); k++) {
-            for (int l : tempState) {
+            for (int l : start) {
                 if(finals[k] == l ){
                     newInitial.makeFinal();
                 }
@@ -401,6 +496,7 @@ NFA NFA::detemine() const {
     newOne.addState(newInitial);
     for (int i = 1; i < newStates.size() ; i++) {
         State newState;
+        std::vector<int> stateWithSymbol;
         for (int j = 0; j < SYMBOLS_IN_LANGUAGE ; j++) {
             std::vector<int> tempState;
             char symbol;
@@ -422,14 +518,13 @@ NFA NFA::detemine() const {
             }
 
             for (int k = 0; k < finals.getNumberOfElements(); k++) {
-                for (int l : tempState) {
+                for (int l : newStates[i]) {
                     if(finals[k] == l){
                         newState.makeFinal();
                     }
                 }
             }
         }
-        if (i == 0) newState.makeInitial();
         newOne.addState(newState);
     }
     return newOne;
@@ -437,7 +532,8 @@ NFA NFA::detemine() const {
 NFA NFA::unite(const NFA& other) const {
     // Adding the states from the other automaton and making them finals and initials
     const int numberOfStates = this->getStates().getNumberOfElements();
-    NFA newOne = *this;
+    NFA newOne;
+    newOne = *this;
     for (int i = 0; i < other.getStates().getNumberOfElements() ; i++) {
         State temp;
         for (int j = 0;j < other.getStates()[i].getTranss().getNumberOfElements() ; j++) {
@@ -460,21 +556,26 @@ NFA NFA::concat(const NFA& other) const {
     // adding initials from the first one
     // and adding Epsilon-transition from first finals to others initials
     const int numberOfStates = other.getStates().getNumberOfElements();
-    NFA newOne = other;
+    NFA newOne;
+    newOne = other;
     for (int i = 0; i < this->getStates().getNumberOfElements() ; i++) {
         State temp;
-        for (int j = 0;j < this->getStates()[i].getTranss().getNumberOfElements() ; j++) {
-            temp.addTrans(Trans(this->getStates()[i].getTranss()[j].getSymbol(),
-                                this->getStates()[i].getTranss()[j].getPath()+ numberOfStates));
-        }
-        if(this->getStates()[i].isStateInitial()){
-            temp.makeInitial();
-        }
-        if(this->getStates()[i].isStateFinal()){
-            for (int j = 0; j < other.getInits().getNumberOfElements() ; j++) {
-                temp.addTrans(Trans('E',other.getInits()[j]));
+        if(states[i].isStateFinal()){
+            for (int k = 0; k < other.getInits().getNumberOfElements(); k++) {
+                temp.addTrans(Trans('E',other.getInits()[k]));
             }
         }
+        for (int l = 0; l < states[i].getTranss().getNumberOfElements(); l++) {
+            int newPath = states[i].getTranss()[l].getPath();
+            newPath+= numberOfStates;
+            Trans tempTrans = states[i].getTranss()[l];
+            tempTrans.setPath(newPath);
+            temp.addTrans(tempTrans);
+        }
+        if(states[i].isStateInitial()){
+            temp.makeInitial();
+        }
+
         newOne.addState(temp);
     }
     for (int k = 0; k < other.getInits().getNumberOfElements(); k++) {
